@@ -84,9 +84,10 @@ def train():
     disc = discriminator(image_size = args.image_size)
 
     # feed setup
-    z_in = tf.placeholder(tf.float32, shape=[None, 100])
+    z_in = tf.placeholder(tf.float32, shape=[args.batch_size, 100])
     image_true = tf.placeholder(tf.float32,
-                                shape = [None, args.image_size, args.image_size, 3])
+                                shape = [args.batch_size,
+                                         args.image_size, args.image_size, 3])
     image_fake = gen(z_in)
     pred_true = disc(image_true)
     pred_fake = disc(image_fake)
@@ -159,19 +160,19 @@ def train():
                                                replace = False)]
                 # fake seed
                 z = np.random.uniform(-1, 1, (batch_size, 100))
-                feeder = {z_in: z, image_true: x_true}
+                feeder = {z_in: z, image_true: x_true, K.learning_phase(): 1}
                 sess.run(d_opt, feeder)
 
             # train generator
             z = np.random.uniform(-1, 1, (batch_size, 100))
-            sess.run(g_opt, {z_in: z})
+            sess.run(g_opt, {z_in: z, K.learning_phase(): 1})
 
             print('epoch:{}, batch:{}, g_loss:{}, d_loss:{}'\
                   .format(epoch, batch,
                           *sess.run([loss_g, loss_d], feeder)))
 
             if batch%100 == 0:
-                x_fake = sess.run(image_fake, {z_in: z})
+                x_fake = sess.run(image_fake, {z_in: z, K.learning_phase(): 0})
                 sample = combine_images(x_fake)
                 sample = sample*127.5 + 127.5
 
