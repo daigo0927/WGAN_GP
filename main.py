@@ -64,15 +64,6 @@ print('epochs : {}, lr_g : {}, lr_d : {}\n'.format(args.epochs, args.lr_g, args.
       'weight flag : {}, weight dir : {}, sample dir : {}'\
       .format(args.loadweight, args.weightdir, args.sampledir))
 
-
-# wasserstein : WGAN objective
-# critic MAXIMIZE (f(x) - f(g(z)))/N
-# -> minimize -(f(x) - f(g(z)))/N
-# generator MINIMIZE (f(x) - f(g(z)))/N
-# -> minimize -f(g(z))/N
-def wasserstein(y_true, y_pred): # y = 1:true, -1:fake
-
-    return -K.mean(y_true * y_pred, axis = -1)
         
 def train():
     sess = tf.Session()
@@ -84,22 +75,22 @@ def train():
     disc = discriminator(image_size = args.image_size)
 
     # feed setup
-    z_in = tf.placeholder(tf.float32, shape=[args.batch_size, 100])
+    z_in = tf.placeholder(tf.float32, shape=[None, 100])
     image_true = tf.placeholder(tf.float32,
-                                shape = [args.batch_size,
+                                shape = [None,
                                          args.image_size, args.image_size, 3])
     image_fake = gen(z_in)
     pred_true = disc(image_true)
     pred_fake = disc(image_fake)
     loss_g = -K.mean(pred_fake)
     loss_d = -(K.mean(pred_true) - K.mean(pred_fake))
-    eps = K.random_uniform(shape = [K.shape(z_in)[0],1,1,1])
-    image_inter = image_true - eps*(image_true - image_fake)
-    grad = K.gradients(disc(image_inter), [image_inter])[0]
-    gradpenalty = K.mean(K.square(\
-                                  K.sqrt(K.sum(K.square(grad), axis = 1))\
-                                  - 1))
-    loss_d = loss_d + 10*gradpenalty
+    # eps = K.random_uniform(shape = [K.shape(z_in)[0],1,1,1])
+    # image_inter = image_true - eps*(image_true - image_fake)
+    # grad = K.gradients(disc(image_inter), [image_inter])[0]
+    # gradpenalty = K.mean(K.square(\
+        # K.sqrt(K.sum(K.square(grad), axis = 1))\
+        # - 1))
+    # loss_d = loss_d + 10*gradpenalty
 
     # set optimizer
     d_opt = tf.train.AdamOptimizer(learning_rate = args.lr_d, beta1 = 0.5, beta2 = 0.9)\
@@ -133,6 +124,7 @@ def train():
     for epoch in range(epochs):
         
         for batch in range(num_batches):
+            
 
             # load data splitingly
             if batch in np.linspace(0, num_batches, args.splitload+1, dtype = int):
@@ -145,15 +137,15 @@ def train():
                                  for p in path_split])
 
             # train discriminator
-            # boost discriminator iteration
-            # referred in https://github.com/martinarjovsky/WassersteinGAN
-            if epoch == 0 and batch < 25:
+            if epoch == 0 and batch < 20:
                 nd = 100
             elif batch%500 == 0:
                 nd = 100
             else:
                 nd = args.nd
             for _ in range(nd):
+                d_weights = [np.clip(w, -0.01, 0.01) for w in disc.get_weights()]
+                disc.set_weights(d_weights)
                 # true image
                 x_true = data[np.random.choice(len(data),
                                                batch_size,
