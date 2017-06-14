@@ -76,14 +76,14 @@ def train():
 
     # feed setup
     z_in = tf.placeholder(tf.float32, shape=[None, 100])
-    image_true = tf.placeholder(tf.float32,
+    image_real = tf.placeholder(tf.float32,
                                 shape = [None,
                                          args.image_size, args.image_size, 3])
     image_fake = gen(z_in)
-    pred_true = disc(image_true)
+    pred_real = disc(image_real)
     pred_fake = disc(image_fake)
     loss_g = -K.mean(pred_fake)
-    loss_d = -(K.mean(pred_true) - K.mean(pred_fake))
+    loss_d = -(K.mean(pred_real) - K.mean(pred_fake))
     # eps = K.random_uniform(shape = [K.shape(z_in)[0],1,1,1])
     # image_inter = image_true - eps*(image_true - image_fake)
     # grad = K.gradients(disc(image_inter), [image_inter])[0]
@@ -93,10 +93,17 @@ def train():
     # loss_d = loss_d + 10*gradpenalty
 
     # set optimizer
+    '''
     d_opt = tf.train.AdamOptimizer(learning_rate = args.lr_d, beta1 = 0.5, beta2 = 0.9)\
             .minimize(loss_d, var_list = disc.trainable_weights)
     g_opt = tf.train.AdamOptimizer(learning_rate = args.lr_g, beta1 = 0.5, beta2 = 0.9)\
             .minimize(loss_g, var_list = gen.trainable_weights)
+    '''
+    d_opt = tf.train.RMSPropOptimizer(learning_rate = 5e-5)\
+                    .minimize(loss_d, var_list = disc.trainable_weights)
+    g_opt = tf.train.RMSPropOptimizer(learning_rate = 5e-5)\
+                    .minimize(loss_g, var_list = disc.trainable_weights)
+    
     sess.run(tf.global_variables_initializer())
 
     # load weight (if needed)
@@ -147,12 +154,12 @@ def train():
                 d_weights = [np.clip(w, -0.01, 0.01) for w in disc.get_weights()]
                 disc.set_weights(d_weights)
                 # true image
-                x_true = data[np.random.choice(len(data),
+                x_real = data[np.random.choice(len(data),
                                                batch_size,
                                                replace = False)]
                 # fake seed
                 z = np.random.uniform(-1, 1, (batch_size, 100))
-                feeder = {z_in: z, image_true: x_true, K.learning_phase(): 1}
+                feeder = {z_in: z, image_real: x_real, K.learning_phase(): 1}
                 sess.run(d_opt, feeder)
 
             # train generator
