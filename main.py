@@ -83,7 +83,7 @@ def train():
     pred_real = disc(image_real)
     pred_fake = disc(image_fake)
     loss_g = -K.mean(pred_fake)
-    loss_d = -(K.mean(pred_real) - K.mean(pred_fake))
+    loss_d = K.mean(pred_fake) - K.mean(pred_real)
     # eps = K.random_uniform(shape = [K.shape(z_in)[0],1,1,1])
     # image_inter = image_true - eps*(image_true - image_fake)
     # grad = K.gradients(disc(image_inter), [image_inter])[0]
@@ -102,7 +102,7 @@ def train():
     d_opt = tf.train.RMSPropOptimizer(learning_rate = 5e-5)\
                     .minimize(loss_d, var_list = disc.trainable_weights)
     g_opt = tf.train.RMSPropOptimizer(learning_rate = 5e-5)\
-                    .minimize(loss_g, var_list = disc.trainable_weights)
+                    .minimize(loss_g, var_list = gen.trainable_weights)
     
     sess.run(tf.global_variables_initializer())
 
