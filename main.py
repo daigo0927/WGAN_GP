@@ -112,7 +112,7 @@ class WassersteinGAN:
 
         self.d_opt = tf.train.RMSPropOptimizer(learning_rate = 5e-5)\
                      .minimize(self.d_loss, var_list = self.disc.trainable_weights)
-        self.g_opt = tf.train.RMSPropOptimizer(learning_rate = 5e-5)\
+        self.g_opt = tf.train.RMSPropOptimizer(learning_rate = 1e-5)\
                      .minimize(self.g_loss, var_list = self.gen.trainable_weights)
 
         self.saver = tf.train.Saver()
@@ -154,17 +154,17 @@ class WassersteinGAN:
                 self.sess.run(self.g_opt, feed_dict = {self.z: bz,
                                                        K.learning_phase(): 1})
 
-                d_loss, g_loss = self.sess.run([self.d_loss, self.g_loss],
-                                               feed_dict = {self.x: bx, self.z: bz,
-                                                            K.learning_phase(): 1})
-
-                print('epoch : {}, batch : {}, d_loss : {}, g_loss : {}'\
-                      .format(e, batch, d_loss, g_loss))
+                if batch%10 == 0:
+                    d_loss, g_loss = self.sess.run([self.d_loss, self.g_loss],
+                                                   feed_dict = {self.x: bx, self.z: bz,
+                                                                K.learning_phase(): 1})
+                    print('epoch : {}, batch : {}, d_loss : {}, g_loss : {}'\
+                          .format(e, batch, d_loss, g_loss))
 
                 if batch%100 == 0:
                     fake_sample = self.sess.run(self.x_, feed_dict = {self.z: bz,
-                                                                      K.learning_phase(): 0})
-                    fake_sample = combine_images(generated_sample)
+                                                                      K.learning_phase(): 1})
+                    fake_sample = combine_images(fake_sample)
                     fake_sample = fake_sample*127.5 + 127.5
                     Image.fromarray(fake_sample.astype(np.uint8))\
                          .save(sampledir + '/sample_{}_{}.png'.format(e, batch))
