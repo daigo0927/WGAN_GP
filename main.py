@@ -9,7 +9,7 @@ import pdb
 from PIL import Image
 import h5py
 import argparse
-import fire
+from tqdm import tqdm
 
 from keras.models import Sequential, Model
 from keras.optimizers import RMSprop
@@ -24,9 +24,9 @@ parser = argparse.ArgumentParser()
 # optimization
 parser.add_argument('-e', '--epochs', type=int, default=20,
                     help = 'number of epochs [20]')
-parser.add_argument('--lr_g', type = float, default = 1e-4,
+parser.add_argument('--lr_g', type = float, default = 5e-5,
                     help = 'learning rate for generator [1e-4]')
-parser.add_argument('--lr_d', type = float, default = 1e-4,
+parser.add_argument('--lr_d', type = float, default = 5e-5,
                     help = 'learning rate for discriminator [1e-4]')
 parser.add_argument('--train_size', type = int, default = np.inf,
                     help = 'size of trainind data [np.inf]')
@@ -83,7 +83,7 @@ def train():
     pred_real = disc(image_real)
     pred_fake = disc(image_fake)
     loss_g = -K.mean(pred_fake)
-    loss_d = K.mean(pred_fake) - K.mean(pred_real)
+    loss_d = -(K.mean(pred_real) - K.mean(pred_fake))
     # eps = K.random_uniform(shape = [K.shape(z_in)[0],1,1,1])
     # image_inter = image_true - eps*(image_true - image_fake)
     # grad = K.gradients(disc(image_inter), [image_inter])[0]
@@ -101,8 +101,12 @@ def train():
     '''
     d_opt = tf.train.RMSPropOptimizer(learning_rate = 5e-5)\
                     .minimize(loss_d, var_list = disc.trainable_weights)
+    for w_d in disc.trainable_weights:
+        print(w_d)
     g_opt = tf.train.RMSPropOptimizer(learning_rate = 5e-5)\
                     .minimize(loss_g, var_list = gen.trainable_weights)
+    for w_g in gen.trainable_weights:
+        print(w_g)
     
     sess.run(tf.global_variables_initializer())
 
@@ -132,7 +136,6 @@ def train():
         
         for batch in range(num_batches):
             
-
             # load data splitingly
             if batch in np.linspace(0, num_batches, args.splitload+1, dtype = int):
                 path_split = np.random.choice(paths,
@@ -141,7 +144,7 @@ def train():
                 data = np.array([get_image(p,
                                            args.image_target,
                                            args.image_size)\
-                                 for p in path_split])
+                                 for p in tqdm(path_split)])
 
             # train discriminator
             if epoch == 0 and batch < 20:
@@ -159,12 +162,12 @@ def train():
                                                replace = False)]
                 # fake seed
                 z = np.random.uniform(-1, 1, (batch_size, 100))
-                feeder = {z_in: z, image_real: x_real, K.learning_phase(): 1}
+                feeder = {z_in: z, image_real: x_real, K.learning_phase(): 0}
                 sess.run(d_opt, feeder)
 
             # train generator
             z = np.random.uniform(-1, 1, (batch_size, 100))
-            sess.run(g_opt, {z_in: z, K.learning_phase(): 1})
+            sess.run(g_opt, {z_in: z, K.learning_phase(): 0})
 
             print('epoch:{}, batch:{}, g_loss:{}, d_loss:{}'\
                   .format(epoch, batch,
