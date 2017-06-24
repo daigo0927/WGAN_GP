@@ -118,7 +118,7 @@ class WassersteinGAN:
         self.saver = tf.train.Saver()
 
         self.sess = tf.Session()
-        K.set_session(self.sess)
+        # K.set_session(self.sess)
 
     def train(self,
               nd, sampler,
@@ -169,8 +169,8 @@ class WassersteinGAN:
                     Image.fromarray(fake_sample.astype(np.uint8))\
                          .save(sampledir + '/sample_{}_{}.png'.format(e, batch))
 
-            self.gen.save_weights(weightdir + '/g_{}epoch.h5'.format(e))
-            self.disc.save_weights(weightdir + '/d_{}epoch.h5'.format(e))
+            self.gen.save_weights(modeldir + '/g_{}epoch.h5'.format(e))
+            self.disc.save_weights(modeldir + '/d_{}epoch.h5'.format(e))
 
 if __name__ == '__main__':
     main()
@@ -296,7 +296,3 @@ def train():
 
         gen.save_weights(args.weightdir + '/wgan_g_{}epoch.h5'.format(epoch))
         disc.save_weights(args.weightdir + '/wgan_d_{}epoch.h5'.format(epoch))
-
-if __name__ == '__main__':
-
-    train()
