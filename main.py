@@ -118,7 +118,7 @@ class WassersteinGAN:
         self.saver = tf.train.Saver()
 
         self.sess = tf.Session()
-        # K.set_session(self.sess)
+        K.set_session(self.sess)
 
     def train(self,
               nd, sampler,
