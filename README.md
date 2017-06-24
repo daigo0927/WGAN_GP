@@ -1,6 +1,7 @@
 # WGAN_GP
-Keras implementation of 'improved Training of Wasserstein GANs'
+Keras model and tensorflow optimization of 'improved Training of Wasserstein GANs'
 
-! don't well-performing yet!
+only still coding normal Wasserstein GAN
 
-! I want someone to have some idea
+Gradient Penalty (proposed in the paper) is now under inplemention, please wait
+
