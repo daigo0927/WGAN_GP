@@ -71,7 +71,8 @@ def main():
 
     wgan = WassersteinGAN(gen = gen, disc = disc,
                           z_dim = 100, image_size = args.image_size,
-                          lr_d = args.lr_d, lr_g = args.lr_g)
+                          lr_d = 5e-5, # args.lr_d,
+                          lr_g = 1e-5) # args.lr_g)
 
     sampler = InputSampler(datadir = args.datadir,
                            target_size = args.target_size, image_size = args.image_size,
@@ -96,8 +97,6 @@ class WassersteinGAN:
         self.disc = disc
         self.z_dim = z_dim
         self.image_size = image_size
-        self.lr_d = lr_d
-        self.lr_g = lr_g
 
         self.x = tf.placeholder(tf.float32, (None, self.image_size, self.image_size, 3),
                                 name = 'x')
@@ -110,9 +109,14 @@ class WassersteinGAN:
         self.d_loss = -(tf.reduce_mean(self.d) - tf.reduce_mean(self.d_))
         self.g_loss = -tf.reduce_mean(self.d_)
 
-        self.d_opt = tf.train.RMSPropOptimizer(learning_rate = 5e-5)\
+        self.lr_d = tf.placeholder(tf.float32, shape = ())
+        self.lr_d_schedule = np.array([lr_d, lr_d/5, lr_d/10, lr_d/50])
+        self.lr_g = tf.placeholder(tf.float32, shape = ())
+        self.lr_g_schedule = np.array([lr_g, lr_g/5, lr_g/10, lr_g/50])
+
+        self.d_opt = tf.train.RMSPropOptimizer(learning_rate = self.lr_d)\
                      .minimize(self.d_loss, var_list = self.disc.trainable_weights)
-        self.g_opt = tf.train.RMSPropOptimizer(learning_rate = 1e-5)\
+        self.g_opt = tf.train.RMSPropOptimizer(learning_rate = self.lr_g)\
                      .minimize(self.g_loss, var_list = self.gen.trainable_weights)
 
         self.saver = tf.train.Saver()
@@ -132,6 +136,19 @@ class WassersteinGAN:
 
         # training iteration
         for e in range(epochs):
+            if e < 4:
+                lr_d = self.lr_d_schedule[0]
+                lr_g = self.lr_g_schedule[0]
+            elif e >= 4 and e < 8:
+                lr_d = self.lr_d_schedule[1]
+                lr_g = self.lr_g_schedule[1]
+            elif e >= 8 and e < 15:
+                lr_d = self.lr_d_schedule[2]
+                lr_g = self.lr_g_schedule[2]
+            else:
+                lr_d = self.lr_d_schedule[3]
+                lr_g = self.lr_g_schedule[3]
+                
             for batch in range(num_batches):
 
                 if batch in np.linspace(0, num_batches, sampler.split+1, dtype = int):
@@ -148,10 +165,12 @@ class WassersteinGAN:
                     bx = sampler.image_sample(batch_size)
                     bz = sampler.noise_sample(batch_size)
                     self.sess.run(self.d_opt, feed_dict = {self.x: bx, self.z: bz,
+                                                           self.lr_d: lr_d,
                                                            K.learning_phase(): 1})
 
                 bz = sampler.noise_sample(batch_size, self.z_dim)
                 self.sess.run(self.g_opt, feed_dict = {self.z: bz,
+                                                       self.lr_g: lr_g,
                                                        K.learning_phase(): 1})
 
                 if batch%10 == 0:
