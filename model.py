@@ -14,6 +14,9 @@ from keras.layers.advanced_activations import LeakyReLU
 from keras.layers.pooling import MaxPooling2D, GlobalAveragePooling2D
 from keras.layers.normalization import BatchNormalization
 from keras.layers.convolutional import Conv2D, Conv2DTranspose, UpSampling2D
+from keras.initializers import RandomNormal
+
+init = RandomNormal(mean = 0., stddev = 0.02)
 
 # ConvTranspose (often called Deconv) ver.
 def GeneratorDeconv(image_size = 64): 
@@ -26,18 +29,22 @@ def GeneratorDeconv(image_size = 64):
     x = Activation('relu')(x)
     x = Reshape((int(L/16), int(L/16), 512))(x) # shape(L/16, L/16, 512)
     x = Conv2DTranspose(256, (4, 4), strides = (2, 2),
+                        kernel_initializer = init,
                         padding = 'same')(x) # shape(L/8, L/8, 256)
     x = BatchNormalization()(x)
     x = Activation('relu')(x)
     x = Conv2DTranspose(128, (4, 4), strides = (2, 2),
+                        kernel_initializer = init,
                         padding = 'same')(x) # shape(L/4, L/4, 128)
     x = BatchNormalization()(x)
     x = Activation('relu')(x)
     x = Conv2DTranspose(64, (4, 4), strides = (2, 2),
+                        kernel_initializer = init,
                         padding = 'same')(x) # shape(L/2, L/2, 64)
     x = BatchNormalization()(x)
     x = Activation('relu')(x)
     x = Conv2DTranspose(3, (4, 4), strides= (2, 2),
+                        kernel_initializer = init,
                         padding = 'same')(x) # shape(L, L, 3)
     images = Activation('tanh')(x)
 
@@ -51,15 +58,19 @@ def Discriminator(image_size = 64):
     L = int(image_size)
 
     images = Input(shape = (L, L, 3))
-    x = Conv2D(64, (4, 4), strides = (2, 2), padding = 'same')(images) # shape(L/2, L/2, 32)
+    x = Conv2D(64, (4, 4), strides = (2, 2),
+               kernel_initializer = init, padding = 'same')(images) # shape(L/2, L/2, 32)
     x = LeakyReLU(0.2)(x)
-    x = Conv2D(128, (4, 4), strides = (2, 2), padding = 'same')(x) # shape(L/4, L/4, 64)
+    x = Conv2D(128, (4, 4), strides = (2, 2),
+               kernel_initializer = init, padding = 'same')(x) # shape(L/4, L/4, 64)
     x = BatchNormalization()(x)
     x = LeakyReLU(0.2)(x)
-    x = Conv2D(256, (4, 4), strides = (2, 2), padding = 'same')(x) # shape(L/8, L/8, 128)
+    x = Conv2D(256, (4, 4), strides = (2, 2),
+               kernel_initializer = init, padding = 'same')(x) # shape(L/8, L/8, 128)
     x = BatchNormalization()(x)
     x = LeakyReLU(0.2)(x)
-    x = Conv2D(512, (4, 4), strides = (2, 2), padding = 'same')(x) # shape(L/16, L/16, 256)
+    x = Conv2D(512, (4, 4), strides = (2, 2),
+               kernel_initializer = init, padding = 'same')(x) # shape(L/16, L/16, 256)
     x = BatchNormalization()(x)
     x = LeakyReLU(0.2)(x)
     x = Flatten()(x)

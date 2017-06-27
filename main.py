@@ -6,7 +6,6 @@ import pdb
 from PIL import Image
 import h5py
 import argparse
-from tqdm import tqdm
 
 import keras.backend as K
 import tensorflow as tf
@@ -107,15 +106,15 @@ class WassersteinGAN:
         self.g_loss = -tf.reduce_mean(self.d_)
 
         # gradient penalty
-        self.alpha = tf.random_uniform((tf.shape(self.x)[0], 1),
-                                       minval = 0., maxval = 1,)
-        self.differ = self.x_ - self.x
-        self.interp = self.x + (self.alpha * self.differ)
-        self.grads = tf.gradients(self.disc(self.interp), [self.interp])[0]
-        self.slopes = tf.sqrt(tf.reduce_sum(tf.square(self.grads),
-                                            reduction_indices = [3]))
-        self.grad_penalty = tf.reduce_mean((self.slopes - 1.)**2)
-        self.d_loss += 10 * self.grad_penalty
+        alpha = tf.random_uniform((tf.shape(self.x)[0], 1),
+                                  minval = 0., maxval = 1,)
+        differ = self.x_ - self.x
+        interp = self.x + (alpha * differ)
+        grads = tf.gradients(self.disc(interp), [interp])[0]
+        slopes = tf.sqrt(tf.reduce_sum(tf.square(grads),
+                                       reduction_indices = [3]))
+        grad_penalty = tf.reduce_mean((slopes - 1.)**2)
+        self.d_loss += 10 * grad_penalty
 
         self.lr_d = lr_d
         self.lr_g = lr_g
@@ -126,6 +125,8 @@ class WassersteinGAN:
         self.g_opt = tf.train.AdamOptimizer(learning_rate = self.lr_g,
                                             beta1 = 0., beta2 = 0.9)\
                      .minimize(self.g_loss, var_list = self.gen.trainable_weights)
+
+        self.saver = tf.train.Saver()
 
         self.sess = tf.Session()
         K.set_session(self.sess)
@@ -149,12 +150,10 @@ class WassersteinGAN:
                     sampler.reload()
 
                 d_iter = nd
-                if batch%500 == 0 or batch<25:
-                    d_iter = 100
 
                 for _ in range(d_iter):
-                    d_weights = [np.clip(w, -0.01, 0.01) for w in self.disc.get_weights()]
-                    self.disc.set_weights(d_weights)
+                    # d_weights = [np.clip(w, -0.01, 0.01) for w in self.disc.get_weights()]
+                    # self.disc.set_weights(d_weights)
 
                     bx = sampler.image_sample(batch_size)
                     bz = sampler.noise_sample(batch_size)
@@ -180,8 +179,9 @@ class WassersteinGAN:
                     Image.fromarray(fake_sample.astype(np.uint8))\
                          .save(sampledir + '/sample_{}_{}.png'.format(e, batch))
 
-            self.gen.save_weights(modeldir + '/g_{}epoch.h5'.format(e))
-            self.disc.save_weights(modeldir + '/d_{}epoch.h5'.format(e))
+            self.saver.save(self.sess, modeldir + '/result{}.ckpt'.format(e))
+            # self.gen.save_weights(modeldir + '/g_{}epoch.h5'.format(e))
+            # self.disc.save_weights(modeldir + '/d_{}epoch.h5'.format(e))
 
 if __name__ == '__main__':
     main()
