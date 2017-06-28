@@ -10,7 +10,8 @@ class InputSampler:
 
     def __init__(self, datadir,
                  target_size = 108, image_size = 64,
-                 split = 5, num_utilize = np.inf):
+                 split = 5, num_utilize = np.inf,
+                 extension = '.jpg'):
         
         self.datadir = datadir
         self.target_size = target_size
@@ -19,7 +20,7 @@ class InputSampler:
 
         self.image_paths = []
         for d in self.datadir:
-            self.image_paths += glob(d + '/*')
+            self.image_paths += glob(d + '/*.jpg')
         self.data_size = min(len(self.image_paths), num_utilize)
         print('data size : {}'.format(self.data_size))
         self.image_paths = np.random.choice(self.image_paths,
