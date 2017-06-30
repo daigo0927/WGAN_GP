@@ -106,7 +106,7 @@ class WassersteinGAN:
         self.g_loss = -tf.reduce_mean(self.d_)
 
         # gradient penalty
-        alpha = tf.random_uniform((tf.shape(self.x)[0], 1),
+        alpha = tf.random_uniform((tf.shape(self.x)[0], 1, 1, 1),
                                   minval = 0., maxval = 1,)
         differ = self.x_ - self.x
         interp = self.x + (alpha * differ)
@@ -172,7 +172,8 @@ class WassersteinGAN:
                           .format(e, batch, d_loss, g_loss))
 
                 if batch%100 == 0:
-                    fake_sample = self.sess.run(self.x_, feed_dict = {self.z: bz,
+                    fake_seed = sampler.noise_sample(9, self.z_dim)
+                    fake_sample = self.sess.run(self.x_, feed_dict = {self.z: fake_seed,
                                                                       K.learning_phase(): 1})
                     fake_sample = combine_images(fake_sample)
                     fake_sample = fake_sample*127.5 + 127.5
