@@ -10,7 +10,7 @@ class InputSampler:
 
     def __init__(self, datadir,
                  target_size = 108, image_size = 64,
-                 split = 5, num_utilize = np.inf)
+                 split = 5, num_utilize = np.inf):
         
         self.datadir = datadir
         self.target_size = target_size

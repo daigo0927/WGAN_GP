@@ -45,13 +45,16 @@ def combine_images(generated_images):
 def get_image(filepath, image_target, image_size):
     
     img = imread(filepath).astype(np.float)
-    h_origin, w_origin, _ = img.shape
+    h_origin, w_origin = img.shape[:2]
 
     if image_target > h_origin or image_target > w_origin:
         image_target = min(h_origin, w_origin)
 
     h_drop = int((h_origin - image_target)/2)    
     w_drop = int((w_origin - image_target)/2)
+
+    if img.ndim == 2:
+        img = np.tile(img.reshape(h_origin, w_origin, 1), (1,1,3))
     
     img_crop = img[h_drop:h_drop+image_target, w_drop:w_drop+image_target, :]
         
