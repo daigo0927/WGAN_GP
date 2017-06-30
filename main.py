@@ -37,7 +37,7 @@ def main():
                         help = 'target area of training data [108]')
     parser.add_argument('--image_size', type = int, default = 64,
                         help = 'size of generated image [64]')
-    parser.add_argument('--datadir', type = str, nargs = '+', required = True,
+    parser.add_argument('-d', '--datadir', type = str, nargs = '+', required = True,
                         help = 'path to directory contains training (image) data')
     parser.add_argument('--split', type = int, default = 5,
                         help = 'load data, by [5] split')
