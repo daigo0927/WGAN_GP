@@ -49,15 +49,8 @@ def main():
                         help = 'path to directory put generated image samples [./image]')
     args = parser.parse_args()
 
-    print('epochs : {}, lr_g : {}, lr_d : {}\n'.format(args.epochs, args.lr_g, args.lr_d),
-          'train size : {}, batch size : {}, disc-schedule : {}\n'\
-          .format(args.train_size, args.batch_size, args.nd),
-          'generator type : {},'.format(args.generator),
-          'target size : {}, image size : {}\n'.format(args.target_size, args.image_size),
-          'data dir : {}\n,'.format(args.datadir),
-          'load data splitingly : {}\n'.format(args.split),
-          'weight flag : {}, model dir : {}, sample dir : {}'\
-          .format(args.loadweight, args.modeldir, args.sampledir))
+    for key, item in vars(args).items():
+        print(f'{key} : {item}')
 
     disc = Discriminator(args.image_size)
     gen = GeneratorDeconv(args.image_size)

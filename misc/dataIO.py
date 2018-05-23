@@ -19,7 +19,7 @@ class InputSampler:
 
         self.image_paths = []
         for d in self.datadir:
-            self.image_paths += glob(d + '/*.jpg')
+            self.image_paths += glob(d + '/*')
         self.data_size = min(len(self.image_paths), num_utilize)
         print('data size : {}'.format(self.data_size))
         self.image_paths = np.random.choice(self.image_paths,
