@@ -50,7 +50,7 @@ def main():
     args = parser.parse_args()
 
     for key, item in vars(args).items():
-        print(f'{key} : {args}')
+        print(f'{key} : {item}')
 
     disc = Discriminator(args.image_size)
     gen = GeneratorDeconv(args.image_size)
