@@ -11,7 +11,7 @@ import keras.backend as K
 import tensorflow as tf
 
 from model import GeneratorDeconv, Discriminator
-from misc.utils import combine_images
+from misc.utils import *
 from misc.dataIO import InputSampler
 
 def main():
@@ -49,15 +49,8 @@ def main():
                         help = 'path to directory put generated image samples [./image]')
     args = parser.parse_args()
 
-    print('epochs : {}, lr_g : {}, lr_d : {}\n'.format(args.epochs, args.lr_g, args.lr_d),
-          'train size : {}, batch size : {}, disc-schedule : {}\n'\
-          .format(args.train_size, args.batch_size, args.nd),
-          'generator type : {},'.format(args.generator),
-          'target size : {}, image size : {}\n'.format(args.target_size, args.image_size),
-          'data dir : {}\n,'.format(args.datadir),
-          'load data splitingly : {}\n'.format(args.split),
-          'weight flag : {}, model dir : {}, sample dir : {}'\
-          .format(args.loadweight, args.modeldir, args.sampledir))
+    for key, item in vars(args).items():
+        print(f'{key} : {args}')
 
     disc = Discriminator(args.image_size)
     gen = GeneratorDeconv(args.image_size)
@@ -99,11 +92,11 @@ class WassersteinGAN:
                                 name = 'z')
         self.x_ = self.gen(self.z)
 
-        self.d = self.disc(self.x)
-        self.d_ = self.disc(self.x_)
+        self.d = tf.reduce_mean(self.disc(self.x))
+        self.d_ = tf.reduce_mean(self.disc(self.x_))
 
-        self.d_loss = -(tf.reduce_mean(self.d) - tf.reduce_mean(self.d_))
-        self.g_loss = -tf.reduce_mean(self.d_)
+        self.d_loss = -(self.d - self.d_)
+        self.g_loss = -self.d_
 
         # gradient penalty
         alpha = tf.random_uniform((tf.shape(self.x)[0], 1, 1, 1),
@@ -152,9 +145,6 @@ class WassersteinGAN:
                 d_iter = nd
 
                 for _ in range(d_iter):
-                    # d_weights = [np.clip(w, -0.01, 0.01) for w in self.disc.get_weights()]
-                    # self.disc.set_weights(d_weights)
-
                     bx = sampler.image_sample(batch_size)
                     bz = sampler.noise_sample(batch_size)
                     self.sess.run(self.d_opt, feed_dict = {self.x: bx, self.z: bz,
@@ -165,11 +155,11 @@ class WassersteinGAN:
                                                        K.learning_phase(): 1})
 
                 if batch%10 == 0:
-                    d_loss, g_loss = self.sess.run([self.d_loss, self.g_loss],
+                    d_real, d_fake = self.sess.run([self.d, self.d_],
                                                    feed_dict = {self.x: bx, self.z: bz,
-                                                                K.learning_phase(): 1})
-                    print('epoch : {}, batch : {}, d_loss : {}, g_loss : {}'\
-                          .format(e, batch, d_loss, g_loss))
+                                                                K.learning_rate(): 1})
+                    show_progress(e+1, batch+1, num_batches, d_real-d_fake, None)
+
 
                 if batch%100 == 0:
                     fake_seed = sampler.noise_sample(9, self.z_dim)
@@ -181,8 +171,7 @@ class WassersteinGAN:
                          .save(sampledir + '/sample_{}_{}.png'.format(e, batch))
 
             self.saver.save(self.sess, modeldir + '/result{}.ckpt'.format(e))
-            # self.gen.save_weights(modeldir + '/g_{}epoch.h5'.format(e))
-            # self.disc.save_weights(modeldir + '/d_{}epoch.h5'.format(e))
+
 
 if __name__ == '__main__':
     main()
